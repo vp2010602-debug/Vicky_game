@@ -180,3 +180,27 @@ input,select{
   border:2px solid #ffffff !important;
   opacity:1 !important;
 }
+.position-squad{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.pos-box{
+  background:#020b10;
+  border:2px solid rgba(25,255,144,.45);
+  border-radius:16px;
+  padding:12px;
+}
+
+.pos-box h4{
+  margin:0 0 8px;
+  color:#d8ff5f;
+}
+
+.pos-box p{
+  margin:5px 0;
+  font-size:14px;
+  color:#fff;
+}
