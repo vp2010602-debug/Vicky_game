@@ -2,8 +2,104 @@ const firebaseConfig={apiKey:"AIzaSyAXqB9_pYZsensijZuFqW7cHMW6mRrob6M",authDomai
 const BUDGET=10000,SQUAD_MAX=15,FORMATIONS={433:[["GK"],["DEF","DEF","DEF","DEF"],["MID","MID","MID"],["FWD","FWD","FWD"]],442:[["GK"],["DEF","DEF","DEF","DEF"],["MID","MID","MID","MID"],["FWD","FWD"]],352:[["GK"],["DEF","DEF","DEF"],["MID","MID","MID","MID","MID"],["FWD","FWD"]],4231:[["GK"],["DEF","DEF","DEF","DEF"],["MID","MID"],["MID","MID","MID"],["FWD"]]};
 let roomCode="",myId="p_"+Math.random().toString(36).slice(2,10),myName="",isHost=false,room=null,selectedXIPlayer=null,manualXI={},currentScreen="home";
 function $(id){return document.getElementById(id)}function show(id){currentScreen=id;document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active")}function showCreate(){show("createScreen")}function showJoin(){show("joinScreen")}function goHome(){show("home")}function resetHome(){roomCode="";room=null;isHost=false;myName="";show("home")}function money(l){return (Number(l||0)/100).toFixed(2)+" Cr"}function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}function shuffle(a){return[...a].map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1])}function posGroup(p){if(p==="GK")return"GK";if(["CB","LB","RB","DF"].includes(p))return"DEF";if(["CM","CDM","CAM","MF"].includes(p))return"MID";return"FWD"}function squadArr(u){return Object.values(u?.squad||{})}function xiArr(u){return Object.values(u?.manualXI||{})}function addHistory(t){if(roomCode)db.ref(`rooms/${roomCode}/history`).push({text:t,time:Date.now()})}
-async function createRoom(){const name=$("hostName").value.trim(),team=$("hostTeam").value.trim()||name+" FC",logo=$("hostLogo").value.trim()||"⚽",pin=$("hostPin").value.trim()||"1234";if(!name)return alert("Enter your name macha");roomCode=makeCode();myName=name;isHost=true;await db.ref("rooms/"+roomCode).set({createdAt:Date.now(),status:"lobby",hostId:myId,hostPin:pin,budget:BUDGET,index:0,currentBid:0,highestBidderId:"",highestBidderName:"",sold:{},unsold:{},history:{},reveal:false,players:shuffle(PLAYERS)});await db.ref(`rooms/${roomCode}/users/${myId}`).set({name:myName,team,logo,purse:BUDGET,squad:{},joinedAt:Date.now()});listenRoom();show("lobby")}
-async function joinRoom(){const name=$("joinName").value.trim(),team=$("joinTeam").value.trim()||name+" FC",logo=$("joinLogo").value.trim()||"⚽",code=$("roomCodeInput").value.trim().toUpperCase();if(!name||!code)return alert("Enter name and room code");const snap=await db.ref("rooms/"+code).get();if(!snap.exists())return alert("Room not found");const data=snap.val(),userCount=data.users?Object.keys(data.users).length:0;if(userCount>=8)return alert("Room full. Max 8 teams.");roomCode=code;myName=name;isHost=false;await db.ref(`rooms/${roomCode}/users/${myId}`).set({name:myName,team,logo,purse:data.budget||BUDGET,squad:{},joinedAt:Date.now()});listenRoom();show(data.status==="auction"?"auction":data.status==="formation"?"formation":data.status==="revealed"?"trophy":"lobby")}
+async function createRoom(){
+  const name=$("hostName").value.trim();
+  const team=$("hostTeam").value.trim()||name+" FC";
+  const logo=$("hostLogo").value.trim()||"⚽";
+  const teamPin=$("hostTeamPin").value.trim()||"1111";
+  const pin=$("hostPin").value.trim()||"1234";
+
+  if(!name)return alert("Enter your name macha");
+
+  roomCode=makeCode();
+  myName=name;
+  isHost=true;
+
+  await db.ref("rooms/"+roomCode).set({
+    createdAt:Date.now(),
+    status:"lobby",
+    hostId:myId,
+    hostPin:pin,
+    budget:BUDGET,
+    index:0,
+    currentBid:0,
+    highestBidderId:"",
+    highestBidderName:"",
+    sold:{},
+    unsold:{},
+    history:{},
+    reveal:false,
+    players:shuffle(PLAYERS)
+  });
+
+  await db.ref(`rooms/${roomCode}/users/${myId}`).set({
+    name:myName,
+    team:team,
+    logo:logo,
+    teamPin:teamPin,
+    purse:BUDGET,
+    squad:{},
+    joinedAt:Date.now()
+  });
+
+  listenRoom();
+  show("lobby");
+}
+async function joinRoom(){
+  const name=$("joinName").value.trim();
+  const team=$("joinTeam").value.trim()||name+" FC";
+  const logo=$("joinLogo").value.trim()||"⚽";
+  const teamPin=$("joinTeamPin").value.trim()||"1111";
+  const code=$("roomCodeInput").value.trim().toUpperCase();
+
+  if(!name||!code)return alert("Enter name and room code");
+
+  const snap=await db.ref("rooms/"+code).get();
+
+  if(!snap.exists())return alert("Room not found");
+
+  const data=snap.val();
+  const users=data.users||{};
+
+  let existingUserId=null;
+
+  Object.entries(users).forEach(([uid,u])=>{
+    if((u.team||"").toLowerCase()===team.toLowerCase() && u.teamPin===teamPin){
+      existingUserId=uid;
+    }
+  });
+
+  roomCode=code;
+  myName=name;
+
+  if(existingUserId){
+    myId=existingUserId;
+    alert("Rejoined your old team successfully 🔁");
+  }else{
+    const userCount=Object.keys(users).length;
+    if(userCount>=8)return alert("Room full. Max 8 teams.");
+
+    await db.ref(`rooms/${roomCode}/users/${myId}`).set({
+      name:myName,
+      team:team,
+      logo:logo,
+      teamPin:teamPin,
+      purse:data.budget||BUDGET,
+      squad:{},
+      joinedAt:Date.now()
+    });
+  }
+
+  isHost=data.hostId===myId;
+  listenRoom();
+
+  show(
+    data.status==="auction"?"auction":
+    data.status==="formation"?"formation":
+    data.status==="revealed"?"trophy":
+    "lobby"
+  );
+}
 function listenRoom(){db.ref("rooms/"+roomCode).on("value",s=>{if(!s.exists())return;room=s.val();isHost=room.hostId===myId;render()})}
 function render(){if(!room)return;$("roomCodeText").textContent=roomCode;$("auctionRoomCode").textContent=roomCode;renderLobby();renderAuction();renderFormationStatus();if(room.status==="lobby"&&currentScreen!=="lobby")show("lobby");if(room.status==="auction"&&currentScreen!=="auction")show("auction");if(room.status==="formation"&&currentScreen!=="formation"){show("formation");buildFormationScreen()}if(room.status==="revealed"&&currentScreen!=="trophy"){renderTrophy();show("trophy")}}
 function renderLobby(){const users=room.users||{};$("lobbyPlayers").innerHTML=Object.entries(users).map(([id,u])=>`<div class="item"><b>${u.logo||"⚽"} ${u.team||u.name}${id===room.hostId?" 👑":""}</b><span>${money(u.purse)}</span></div>`).join("");$("hostLobbyControls").classList.toggle("hidden",!isHost)}
