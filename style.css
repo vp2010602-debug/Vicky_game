@@ -102,3 +102,57 @@
   .landing-buttons{display:grid}
   .landing-buttons .big{width:100%}
 }
+/* STRONG AUCTION SCREEN VISIBILITY FIX */
+.card{
+  background:linear-gradient(145deg,rgba(3,14,20,.96),rgba(6,35,24,.96)) !important;
+  border:2px solid rgba(25,255,144,.45) !important;
+  box-shadow:0 0 28px rgba(25,255,144,.18),0 25px 80px rgba(0,0,0,.75) !important;
+}
+
+.bid-panel{
+  background:linear-gradient(145deg,#061018,#0b2a1d) !important;
+  border:3px solid #19ff90 !important;
+  box-shadow:0 0 35px rgba(25,255,144,.45) !important;
+}
+
+.bid-panel h3,
+.card h3{
+  color:#d8ff5f !important;
+  text-shadow:0 0 12px rgba(216,255,95,.7);
+}
+
+.bid-grid button,
+.inline button{
+  background:linear-gradient(135deg,#19ff90,#d8ff5f) !important;
+  color:#04120c !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+  border:2px solid rgba(255,255,255,.35) !important;
+}
+
+input,select{
+  background:#020b10 !important;
+  border:2px solid rgba(25,255,144,.45) !important;
+  color:white !important;
+}
+
+.price.live{
+  background:linear-gradient(135deg,rgba(25,255,144,.35),rgba(216,255,95,.25)) !important;
+  border:2px solid #d8ff5f !important;
+}
+
+#currentBid{
+  color:#d8ff5f !important;
+  font-size:30px !important;
+  text-shadow:0 0 12px #d8ff5f,0 0 24px #19ff90;
+}
+
+.player-card{
+  background:linear-gradient(145deg,#020b10,#092818) !important;
+  border:3px solid #19ff90 !important;
+}
+
+.item{
+  background:#020b10 !important;
+  border:1px solid rgba(25,255,144,.35) !important;
+}
