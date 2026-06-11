@@ -104,7 +104,37 @@ function listenRoom(){db.ref("rooms/"+roomCode).on("value",s=>{if(!s.exists())re
 function render(){if(!room)return;$("roomCodeText").textContent=roomCode;$("auctionRoomCode").textContent=roomCode;renderLobby();renderAuction();renderFormationStatus();if(room.status==="lobby"&&currentScreen!=="lobby")show("lobby");if(room.status==="auction"&&currentScreen!=="auction")show("auction");if(room.status==="formation"&&currentScreen!=="formation"){show("formation");buildFormationScreen()}if(room.status==="revealed"&&currentScreen!=="trophy"){renderTrophy();show("trophy")}}
 function renderLobby(){const users=room.users||{};$("lobbyPlayers").innerHTML=Object.entries(users).map(([id,u])=>`<div class="item"><b>${u.logo||"⚽"} ${u.team||u.name}${id===room.hostId?" 👑":""}</b><span>${money(u.purse)}</span></div>`).join("");$("hostLobbyControls").classList.toggle("hidden",!isHost)}
 async function startAuction(){if(!isHost)return;const count=Object.keys(room.users||{}).length;if(count<2&&!confirm("Only one team joined. Start anyway?"))return;const p=room.players[0];await db.ref("rooms/"+roomCode).update({status:"auction",index:0,currentBid:p.base,highestBidderId:"",highestBidderName:""});addHistory("Auction started")}
-function renderAuction(){const users=room.users||{},me=users[myId];if(me){$("myTeamName").textContent=(me.logo||"⚽")+" "+(me.team||me.name);$("myPurse").textContent=money(me.purse);$("mySquadCount").textContent=squadArr(me).length+"/"+SQUAD_MAX}const p=room.players?.[room.index];if(p){$("playerRating").textContent=p.rating;$("playerPhoto").textContent=p.emoji||"⚽";$("playerName").textContent=p.name;$("playerMeta").textContent=`${p.country} • ${p.pos} • ${posGroup(p.pos)}`;$("basePrice").textContent=money(p.base);$("currentBid").textContent=money(room.currentBid||p.base);$("highestBidder").textContent=room.highestBidderName?`Highest: ${room.highestBidderName}`:"No bids yet"}$("hostControls").classList.toggle("hidden",!isHost);$("liveBidders").innerHTML=Object.entries(users).map(([id,u])=>`<div class="item"><b>${u.logo||"⚽"} ${u.team||u.name}</b><span>${squadArr(u).length}/15 • ${money(u.purse)}</span></div>`).join("");$("mySquad").innerHTML=me&&squadArr(me).length?squadArr(me).map(x=>`<div class="item"><span>${x.emoji||"⚽"} ${x.name} (${x.pos})</span><b>${money(x.price)}</b></div>`).join(""):`<p class="hint">No players bought yet.</p>`;$("soldTable").innerHTML=Object.values(room.sold||{}).slice(-15).reverse().map(x=>`<div class="item"><span>${x.emoji||"⚽"} ${x.name}</span><b>${x.owner} • ${money(x.price)}</b></div>`).join("")||`<p class="hint">No sold players yet.</p>`;$("historyLog").innerHTML=Object.values(room.history||{}).slice(-20).reverse().map(h=>`<div class="item"><span>${h.text}</span></div>`).join("")||`<p class="hint">History appears here.</p>`}
+function renderAuction(){const users=room.users||{},me=users[myId];if(me){$("myTeamName").textContent=(me.logo||"⚽")+" "+(me.team||me.name);$("myPurse").textContent=money(me.purse);$("mySquadCount").textContent=squadArr(me).length+"/"+SQUAD_MAX}const p=room.players?.[room.index];if(p){$("playerRating").textContent=p.rating;$("playerPhoto").textContent=p.emoji||"⚽";$("playerName").textContent=p.name;$("playerMeta").textContent=`${p.country} • ${p.pos} • ${posGroup(p.pos)}`;$("basePrice").textContent=money(p.base);$("currentBid").textContent=money(room.currentBid||p.base);$("highestBidder").textContent=room.highestBidderName?`Highest: ${room.highestBidderName}`:"No bids yet"}$("hostControls").classList.toggle("hidden",!isHost);$("liveBidders").innerHTML=Object.entries(users).map(([id,u])=>`<div class="item"><b>${u.logo||"⚽"} ${u.team||u.name}</b><span>${squadArr(u).length}/15 • ${money(u.purse)}</span></div>`).join("");if(me){
+
+  const squad = squadArr(me);
+
+  const gk = squad.filter(p => group(p.pos) === "GK");
+  const def = squad.filter(p => group(p.pos) === "DEF");
+  const mid = squad.filter(p => group(p.pos) === "MID");
+  const fwd = squad.filter(p => group(p.pos) === "FWD");
+
+  $("mySquadPositions").innerHTML = `
+    <div class="pos-box">
+      <h4>🧤 GK (${gk.length})</h4>
+      ${gk.map(p=>`<p>${p.name}</p>`).join("") || "<p>None</p>"}
+    </div>
+
+    <div class="pos-box">
+      <h4>🛡 DEF (${def.length})</h4>
+      ${def.map(p=>`<p>${p.name}</p>`).join("") || "<p>None</p>"}
+    </div>
+
+    <div class="pos-box">
+      <h4>🎯 MID (${mid.length})</h4>
+      ${mid.map(p=>`<p>${p.name}</p>`).join("") || "<p>None</p>"}
+    </div>
+
+    <div class="pos-box">
+      <h4>⚽ FWD (${fwd.length})</h4>
+      ${fwd.map(p=>`<p>${p.name}</p>`).join("") || "<p>None</p>"}
+    </div>
+  `;
+}$("mySquad").innerHTML=me&&squadArr(me).length?squadArr(me).map(x=>`<div class="item"><span>${x.emoji||"⚽"} ${x.name} (${x.pos})</span><b>${money(x.price)}</b></div>`).join(""):`<p class="hint">No players bought yet.</p>`;$("soldTable").innerHTML=Object.values(room.sold||{}).slice(-15).reverse().map(x=>`<div class="item"><span>${x.emoji||"⚽"} ${x.name}</span><b>${x.owner} • ${money(x.price)}</b></div>`).join("")||`<p class="hint">No sold players yet.</p>`;$("historyLog").innerHTML=Object.values(room.history||{}).slice(-20).reverse().map(h=>`<div class="item"><span>${h.text}</span></div>`).join("")||`<p class="hint">History appears here.</p>`}
 async function placeBid(addLakhs){if(!room||room.status!=="auction")return alert("Auction not active");const me=room.users?.[myId],p=room.players?.[room.index];if(!me||!p)return;if(squadArr(me).length>=SQUAD_MAX)return alert("Your squad is full");const nextBid=Math.max(room.currentBid||p.base,p.base)+Number(addLakhs);if(nextBid>me.purse)return alert("Not enough purse macha");await db.ref("rooms/"+roomCode).update({currentBid:nextBid,highestBidderId:myId,highestBidderName:me.team||me.name});addHistory(`${me.logo||"⚽"} ${me.team||me.name} bid ${money(nextBid)} for ${p.name}`)}function customBid(){const v=Number($("customBid").value);if(!v)return alert("Enter amount in lakhs");placeBid(v);$("customBid").value=""}
 async function sellPlayer(){if(!isHost)return;const p=room.players[room.index],bidder=room.highestBidderId;if(!bidder)return alert("No bidder. Use Unsold.");const u=room.users[bidder],price=room.currentBid||p.base;if(!u||u.purse<price)return alert("Bidder insufficient purse");const obj={...p,price},updates={};updates[`users/${bidder}/purse`]=u.purse-price;updates[`users/${bidder}/squad/${room.index}`]=obj;updates[`sold/${room.index}`]={...obj,owner:u.team||u.name,ownerLogo:u.logo||"⚽"};nextPlayerUpdate(updates);await db.ref("rooms/"+roomCode).update(updates);addHistory(`${p.name} sold to ${u.logo||"⚽"} ${u.team||u.name} for ${money(price)}`)}
 async function unsoldPlayer(){if(!isHost)return;const p=room.players[room.index],updates={};updates[`unsold/${room.index}`]=p;nextPlayerUpdate(updates);await db.ref("rooms/"+roomCode).update(updates);addHistory(`${p.name} went unsold`)}
