@@ -108,10 +108,10 @@ function renderAuction(){const users=room.users||{},me=users[myId];if(me){$("myT
 
   const squad = squadArr(me);
 
-  const gk = squad.filter(p => group(p.pos) === "GK");
-  const def = squad.filter(p => group(p.pos) === "DEF");
-  const mid = squad.filter(p => group(p.pos) === "MID");
-  const fwd = squad.filter(p => group(p.pos) === "FWD");
+  const gk = squad.filter(p => posGroup(p.pos) === "GK");
+  const def = squad.filter(p => posGroup(p.pos) === "DEF");
+  const mid = squad.filter(p => posGroup(p.pos) === "MID");
+  const fwd = squad.filter(p => posGroup(p.pos) === "FWD");
 
   $("mySquadPositions").innerHTML = `
     <div class="pos-box">
